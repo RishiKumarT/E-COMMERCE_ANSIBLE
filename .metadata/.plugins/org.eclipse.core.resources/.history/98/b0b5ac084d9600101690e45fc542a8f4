@@ -1,0 +1,5 @@
+package com.rishi.ecom.security;
+
+public class SecurityConfig {
+
+}

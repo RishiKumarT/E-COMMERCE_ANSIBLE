@@ -1,0 +1,37 @@
+package com.rishi.ecom.repository;
+
+import com.rishi.ecom.entity.Category;
+import com.rishi.ecom.entity.Product;
+import com.rishi.ecom.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface ProductRepository extends JpaRepository<Product, Long> {
+
+    // Search
+    List<Product> findByNameContainingIgnoreCase(String name);
+
+    // Price range
+    List<Product> findByPriceBetween(Double minPrice, Double maxPrice);
+
+    // Search + Price filter
+    List<Product> findByNameContainingIgnoreCaseAndPriceBetween(String name, Double min, Double max);
+
+    // ✅ Get products by Seller
+    List<Product> findBySeller(User seller);
+
+    // Category
+    List<Product> findByCategory(Category category);
+
+    // Category + Price
+    List<Product> findByCategoryAndPriceBetween(Category category, Double min, Double max);
+
+    // Search + Category
+    List<Product> findByNameContainingIgnoreCaseAndCategory(String name, Category category);
+
+    // Search + Category + Price
+    List<Product> findByNameContainingIgnoreCaseAndCategoryAndPriceBetween(
+            String name, Category category, Double min, Double max
+    );
+}

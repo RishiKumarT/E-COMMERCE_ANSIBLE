@@ -1,0 +1,27 @@
+package com.rishi.ecom.config;
+
+import com.rishi.ecom.entity.User;
+import com.rishi.ecom.repository.UserRepository;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class DataLoader {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @PostConstruct
+    public void init() {
+        if (userRepository.findByEmail("admin@shop.com").isEmpty()) {
+            User admin = User.builder()
+                    .name("Super Admin")
+                    .email("admin@shop.com")
+                    .password("admin123") // later, encode
+                    .role(User.Role.ADMIN)
+                    .build();
+            userRepository.save(admin);
+        }
+    }
+}

@@ -1,0 +1,5 @@
+package com.rishi.ecom.repository;
+
+public class OrderRepository {
+
+}

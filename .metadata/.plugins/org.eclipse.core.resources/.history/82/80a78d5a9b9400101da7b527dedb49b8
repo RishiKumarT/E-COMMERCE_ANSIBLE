@@ -1,0 +1,61 @@
+package com.rishi.ecom.controller;
+
+import com.rishi.ecom.entity.Product;
+import com.rishi.ecom.service.ProductService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/products")
+@CrossOrigin(origins = "http://localhost:5173")
+public class ProductController {
+
+    @Autowired
+    private ProductService productService;
+
+    // Add product (Seller only)
+    @PostMapping("/add")
+    public Product addProduct(@RequestParam Long sellerId, @RequestBody Product product) {
+        return productService.addProduct(sellerId, product);
+    }
+
+    // Update product (Seller’s own / Admin any)
+    @PutMapping("/{id}")
+    public Product updateProduct(
+            @PathVariable Long id,
+            @RequestParam Long requesterId,
+            @RequestBody Product product
+    ) {
+        return productService.updateProduct(requesterId, id, product);
+    }
+
+    // Delete product (Seller’s own / Admin any)
+    @DeleteMapping("/{id}")
+    public String deleteProduct(
+            @PathVariable Long id,
+            @RequestParam Long requesterId
+    ) {
+        productService.deleteProduct(requesterId, id);
+        return "Product deleted successfully!";
+    }
+
+    // Get all products
+    @GetMapping
+    public List<Product> getAllProducts() {
+        return productService.getAllProducts();
+    }
+
+    // Get all products by a seller
+    @GetMapping("/seller/{sellerId}")
+    public List<Product> getProductsBySeller(@PathVariable Long sellerId) {
+        return productService.getProductsBySeller(sellerId);
+    }
+
+    // Get a single product by ID
+    @GetMapping("/{id}")
+    public Product getProductById(@PathVariable Long id) {
+        return productService.getProductById(id);
+    }
+}

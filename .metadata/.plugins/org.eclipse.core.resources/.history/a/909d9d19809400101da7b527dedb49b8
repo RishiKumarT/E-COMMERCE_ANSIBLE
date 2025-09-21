@@ -1,0 +1,101 @@
+package com.rishi.ecom.service;
+
+import com.rishi.ecom.entity.*;
+import com.rishi.ecom.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class OrderService {
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private OrderItemRepository orderItemRepository;
+
+    @Autowired
+    private CartService cartService;
+
+    @Autowired
+    private UserService userService;
+
+    // Place an order (convert cart -> order)
+    public Order placeOrder(Long userId) {
+        User user = userService.getUserById(userId);
+
+        if (user.getRole() != User.Role.USER) {
+            throw new RuntimeException("Only USERS can place orders!");
+        }
+
+        Cart cart = cartService.getCart(userId);
+        if (cart.getItems().isEmpty()) {
+            throw new RuntimeException("Cart is empty!");
+        }
+
+        // Create Order
+        Order order = Order.builder()
+                .customer(user)
+                .status("PLACED")
+                .createdAt(LocalDateTime.now())
+                .build();
+        order = orderRepository.save(order);
+
+        double total = 0;
+
+        // Copy cart items into order items
+        List<OrderItem> orderItems = cart.getItems().stream().map(cartItem -> {
+            double price = cartItem.getProduct().getPrice();
+            total += price * cartItem.getQuantity();
+
+            return OrderItem.builder()
+                    .order(order)
+                    .product(cartItem.getProduct())
+                    .quantity(cartItem.getQuantity())
+                    .priceAtPurchase(price)
+                    .build();
+        }).collect(Collectors.toList());
+
+        order.setItems(orderItems);
+        order.setTotalAmount(total);
+
+        orderRepository.save(order);
+
+        // Clear the cart after order
+        cartService.clearCart(userId);
+
+        return order;
+    }
+
+    // User gets own orders
+    public List<Order> getUserOrders(Long userId) {
+        User user = userService.getUserById(userId);
+        return orderRepository.findByCustomer(user);
+    }
+
+    // Admin gets all orders
+    public List<Order> getAllOrders(Long requesterId) {
+        User requester = userService.getUserById(requesterId);
+        if (requester.getRole() != User.Role.ADMIN) {
+            throw new RuntimeException("Only ADMIN can view all orders!");
+        }
+        return orderRepository.findAll();
+    }
+
+    // Admin updates order status
+    public Order updateOrderStatus(Long requesterId, Long orderId, String status) {
+        User requester = userService.getUserById(requesterId);
+        if (requester.getRole() != User.Role.ADMIN) {
+            throw new RuntimeException("Only ADMIN can update order status!");
+        }
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        order.setStatus(status);
+        return orderRepository.save(order);
+    }
+}

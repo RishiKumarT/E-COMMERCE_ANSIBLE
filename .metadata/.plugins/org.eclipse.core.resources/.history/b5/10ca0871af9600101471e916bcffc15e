@@ -1,0 +1,38 @@
+package com.rishi.ecom.controller;
+
+import com.rishi.ecom.entity.Cart;
+import com.rishi.ecom.service.CartService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/cart")
+@CrossOrigin(origins = "http://localhost:5173")
+public class CartController {
+
+    @Autowired
+    private CartService cartService;
+
+    @GetMapping("/{userId}")
+    public Cart getCart(@PathVariable Long userId) {
+        return cartService.getCart(userId);
+    }
+
+    @PostMapping("/{userId}/add")
+    public Cart addToCart(@PathVariable Long userId,
+                          @RequestParam Long productId,
+                          @RequestParam int quantity) {
+        return cartService.addToCart(userId, productId, quantity);
+    }
+
+    @DeleteMapping("/{userId}/remove/{cartItemId}")
+    public Cart removeFromCart(@PathVariable Long userId,
+                               @PathVariable Long cartItemId) {
+        return cartService.removeFromCart(userId, cartItemId);
+    }
+
+    @DeleteMapping("/{userId}/clear")
+    public Cart clearCart(@PathVariable Long userId) {
+        return cartService.clearCart(userId);
+    }
+}

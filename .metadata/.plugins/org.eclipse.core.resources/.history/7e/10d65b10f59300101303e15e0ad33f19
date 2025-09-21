@@ -1,0 +1,74 @@
+package com.rishi.ecom.service;
+
+import com.rishi.ecom.entity.*;
+import com.rishi.ecom.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+
+@Service
+public class CartService {
+
+    @Autowired
+    private CartRepository cartRepository;
+
+    @Autowired
+    private CartItemRepository cartItemRepository;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    // Get or create a cart for user
+    public Cart getCart(Long userId) {
+        User user = userService.getUserById(userId);
+        if (user.getRole() != User.Role.USER) {
+            throw new RuntimeException("Only users can have carts!");
+        }
+        return cartRepository.findByUser(user)
+                .orElseGet(() -> {
+                    Cart newCart = Cart.builder().user(user).build();
+                    return cartRepository.save(newCart);
+                });
+    }}
+
+    // Add item to cart
+    public Cart addToCart(Long userId, Long productId, int quantity) {
+        Cart cart = getCart(userId);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        CartItem item = CartItem.builder()
+                .cart(cart)
+                .product(product)
+                .quantity(quantity)
+                .build();
+
+        cartItemRepository.save(item);
+        return getCart(userId); // return updated cart
+    }
+
+    // Remove item from cart
+    public Cart removeFromCart(Long userId, Long cartItemId) {
+        Cart cart = getCart(userId);
+        CartItem item = cartItemRepository.findById(cartItemId)
+                .orElseThrow(() -> new RuntimeException("Item not found"));
+
+        if (!item.getCart().getId().equals(cart.getId())) {
+            throw new RuntimeException("Unauthorized operation!");
+        }
+
+        cartItemRepository.delete(item);
+        return getCart(userId);
+    }
+
+    // Clear cart
+    public Cart clearCart(Long userId) {
+        Cart cart = getCart(userId);
+        cart.getItems().clear();
+        return cartRepository.save(cart);
+    }
+}

@@ -1,0 +1,58 @@
+package com.rishi.ecom.controller;
+
+import com.rishi.ecom.entity.User;
+import com.rishi.ecom.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/users")
+@CrossOrigin(origins = "http://localhost:5173")
+public class UserController {
+
+    @Autowired
+    private UserService userService;
+
+    // ✅ Register new USER or SELLER
+    @PostMapping("/register")
+    public User register(@RequestBody User user) {
+        return userService.registerUser(user);
+    }
+
+    // ✅ Get all users (Admin only, protected by JWT)
+    @GetMapping
+    public List<User> getAllUsers(@RequestParam Long requesterId) {
+        User requester = userService.getUserById(requesterId);
+        return userService.getAllUsers(requester);
+    }
+
+    // ✅ Get user by ID (Admin or self)
+    @GetMapping("/{id}")
+    public User getUser(@PathVariable Long id) {
+        return userService.getUserById(id);
+    }
+
+    // ✅ Update user (Admin or self)
+    @PutMapping("/{id}")
+    public User updateUser(
+            @PathVariable Long id,
+            @RequestParam Long requesterId,
+            @RequestBody User updatedUser
+    ) {
+        User requester = userService.getUserById(requesterId);
+        return userService.updateUser(requester, id, updatedUser);
+    }
+
+    // ✅ Delete user (Admin or self)
+    @DeleteMapping("/{id}")
+    public String deleteUser(
+            @PathVariable Long id,
+            @RequestParam Long requesterId
+    ) {
+        User requester = userService.getUserById(requesterId);
+        userService.deleteUser(requester, id);
+        return "User deleted successfully!";
+    }
+}

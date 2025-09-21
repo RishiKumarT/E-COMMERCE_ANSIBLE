@@ -1,0 +1,5 @@
+package com.rishi.ecom.config;
+
+public class CorsConfig {
+
+}

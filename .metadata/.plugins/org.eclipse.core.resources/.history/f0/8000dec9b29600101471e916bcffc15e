@@ -1,0 +1,119 @@
+//package com.rishi.ecom.service;
+//
+//import com.rishi.ecom.entity.Category;
+//import com.rishi.ecom.entity.Product;
+//import com.rishi.ecom.entity.User;
+//import com.rishi.ecom.repository.CategoryRepository;
+//import com.rishi.ecom.repository.ProductRepository;
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.stereotype.Service;
+//
+//import java.util.List;
+//
+//@Service
+//public class ProductService {
+//
+//    @Autowired
+//    private ProductRepository productRepository;
+//
+//    @Autowired
+//    private UserService userService;
+//
+//    @Autowired
+//    private CategoryRepository categoryRepository;
+//
+//    // Seller adds product under category
+//    public Product addProduct(Long sellerId, Long categoryId, Product product) {
+//        User seller = userService.getUserById(sellerId);
+//        if (seller.getRole() != User.Role.SELLER) {
+//            throw new RuntimeException("Only sellers can add products!");
+//        }
+//
+//        Category category = categoryRepository.findById(categoryId)
+//                .orElseThrow(() -> new RuntimeException("Category not found"));
+//
+//        product.setSeller(seller);
+//        product.setCategory(category);
+//
+//        return productRepository.save(product);
+//    }
+//
+//    // Seller updates own product / Admin can update any
+//    public Product updateProduct(Long requesterId, Long productId, Product updatedProduct, Long categoryId) {
+//        User requester = userService.getUserById(requesterId);
+//        Product product = productRepository.findById(productId)
+//                .orElseThrow(() -> new RuntimeException("Product not found"));
+//
+//        if (requester.getRole() != User.Role.ADMIN &&
+//                !product.getSeller().getId().equals(requester.getId())) {
+//            throw new RuntimeException("Access denied!");
+//        }
+//
+//        product.setName(updatedProduct.getName());
+//        product.setDescription(updatedProduct.getDescription());
+//        product.setPrice(updatedProduct.getPrice());
+//        product.setStockQuantity(updatedProduct.getStockQuantity());
+//        product.setImageUrl(updatedProduct.getImageUrl());
+//
+//        if (categoryId != null) {
+//            Category category = categoryRepository.findById(categoryId)
+//                    .orElseThrow(() -> new RuntimeException("Category not found"));
+//            product.setCategory(category);
+//        }
+//
+//        return productRepository.save(product);
+//    }
+//
+//    // Seller deletes own / Admin deletes any
+//    public void deleteProduct(Long requesterId, Long productId) {
+//        User requester = userService.getUserById(requesterId);
+//        Product product = productRepository.findById(productId)
+//                .orElseThrow(() -> new RuntimeException("Product not found"));
+//
+//        if (requester.getRole() != User.Role.ADMIN &&
+//                !product.getSeller().getId().equals(requester.getId())) {
+//            throw new RuntimeException("Access denied!");
+//        }
+//
+//        productRepository.delete(product);
+//    }
+//
+//    // Get all products
+//    public List<Product> getAllProducts() {
+//        return productRepository.findAll();
+//    }
+//
+//    // Get products by Seller
+//    public List<Product> getProductsBySeller(Long sellerId) {
+//        User seller = userService.getUserById(sellerId);
+//        return productRepository.findBySeller(seller);
+//    }
+//
+//    // Get product by ID
+//    public Product getProductById(Long id) {
+//        return productRepository.findById(id)
+//                .orElseThrow(() -> new RuntimeException("Product not found"));
+//    }
+//
+//    // Get products by Category
+//    public List<Product> getProductsByCategory(Long categoryId) {
+//        Category category = categoryRepository.findById(categoryId)
+//                .orElseThrow(() -> new RuntimeException("Category not found"));
+//        return productRepository.findByCategory(category);
+//    }
+//
+//    // Search by product name
+//    public List<Product> searchProducts(String keyword) {
+//        return productRepository.findByNameContainingIgnoreCase(keyword);
+//    }
+//
+//    // Filter by price range
+//    public List<Product> filterByPrice(Double min, Double max) {
+//        return productRepository.findByPriceBetween(min, max);
+//    }
+//
+//    // Combined search + filter
+//    public List<Product> searchAndFilter(String keyword, Double min, Double max) {
+//        return productRepository.findByNameContainingIgnoreCaseAndPriceBetween(keyword, min, max);
+//    }
+//}

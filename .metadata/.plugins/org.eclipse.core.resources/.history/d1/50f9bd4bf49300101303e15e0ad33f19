@@ -1,0 +1,5 @@
+package com.rishi.ecom.entity;
+
+public class Cart {
+
+}

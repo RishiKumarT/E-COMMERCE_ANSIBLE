@@ -1,0 +1,44 @@
+# Node.js / React related
+node_modules/
+build/
+dist/
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Spring Boot / Java related
+*.class
+*.jar
+*.war
+*.ear
+target/
+out/
+*.iml
+*.log
+*.db
+*.h2.db
+*.mv.db
+
+# IDE specific files (common IDEs)
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# MySQL related (usually you don't commit DB files, but if any dumps)
+*.sql
+*.dump
+
+# Logs
+logs/
+*.log
+
+# Environment variables for backend
+.env
+

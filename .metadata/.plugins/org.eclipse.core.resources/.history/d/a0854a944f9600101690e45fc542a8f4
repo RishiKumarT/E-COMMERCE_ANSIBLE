@@ -1,0 +1,5 @@
+package com.rishi.ecom.dto;
+
+public class LoginRequest {
+
+}

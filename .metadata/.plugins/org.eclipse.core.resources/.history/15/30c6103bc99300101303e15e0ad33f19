@@ -1,0 +1,17 @@
+spring.application.name=ECOM-BACKEND
+# Server
+server.port=8080
+
+# Database
+spring.datasource.url=jdbc:mysql://localhost:3306/ecomdb?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+spring.datasource.username=root
+spring.datasource.password=yourpassword
+
+# JPA / Hibernate
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
+
+# JWT Secret Key
+jwt.secret=mySecretKeyForJWT12345
+jwt.expiration=3600000   # 1 hour in ms

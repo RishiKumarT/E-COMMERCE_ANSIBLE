@@ -1,0 +1,236 @@
+package com.rishi.ecom.controller;
+
+import com.rishi.ecom.entity.Product;
+import com.rishi.ecom.entity.User;
+import com.rishi.ecom.security.JwtUtil;
+import com.rishi.ecom.service.ProductService;
+import com.rishi.ecom.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/products")
+@CrossOrigin(origins = "http://localhost:5173")
+@RequiredArgsConstructor
+public class ProductController {
+
+    private final ProductService productService;
+    private final UserService userService;
+    private final JwtUtil jwtUtil;
+
+    // Seller adds product under category. If requester is ADMIN, optional sellerId param can be provided to add on behalf.
+    @PostMapping("/add")
+    public Product addProduct(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam Long categoryId,
+            @RequestParam(required = false) Long sellerId, // admin may pass sellerId
+            @RequestBody Product product
+    ) {
+        User requester = getUserFromAuthHeader(authHeader);
+
+        if (requester.getRole() == User.Role.SELLER) {
+            // seller adds product as themselves
+            return productService.addProduct(requester.getId(), categoryId, product);
+        } else if (requester.getRole() == User.Role.ADMIN) {
+            if (sellerId == null) {
+                throw new RuntimeException("Admin must provide sellerId to add product on behalf of a seller");
+            }
+            return productService.addProduct(sellerId, categoryId, product);
+        } else {
+            throw new RuntimeException("Only SELLER or ADMIN can add products!");
+        }
+    }
+
+ // Update product (Seller's own or Admin any)
+    @PutMapping("/{id}")
+    public Product updateProduct(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long id,
+            @RequestParam(required = false) Long categoryId,
+            @RequestBody Product product
+    ) {
+        User requester = getUserFromAuthHeader(authHeader);
+
+        if (requester.getRole() == User.Role.ADMIN) {
+            return productService.updateProductAsAdmin(id, product, categoryId);
+        } else if (requester.getRole() == User.Role.SELLER) {
+            return productService.updateProductAsSeller(requester.getId(), id, product, categoryId);
+        } else {
+            throw new RuntimeException("Only SELLER or ADMIN can update products!");
+        }
+    }
+
+ // Delete product (Seller's own or Admin any)
+    @DeleteMapping("/{id}")
+    public String deleteProduct(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long id
+    ) {
+        User requester = getUserFromAuthHeader(authHeader);
+
+        if (requester.getRole() == User.Role.ADMIN) {
+            productService.deleteProductAsAdmin(id);
+        } else if (requester.getRole() == User.Role.SELLER) {
+            productService.deleteProductAsSeller(requester.getId(), id);
+        } else {
+            throw new RuntimeException("Only SELLER or ADMIN can delete products!");
+        }
+        return "Product deleted successfully!";
+    }
+
+    // Get all products (public)
+    @GetMapping
+    public List<Product> getAllProducts() {
+        return productService.getAllProducts();
+    }
+
+    // Seller gets own products
+    @GetMapping("/my")
+    public List<Product> getMyProducts(@RequestHeader("Authorization") String authHeader) {
+        User requester = getUserFromAuthHeader(authHeader);
+        if (requester.getRole() != User.Role.SELLER) {
+            throw new RuntimeException("Only sellers can access their products");
+        }
+        return productService.getProductsBySeller(requester.getId());
+    }
+
+    // Admin or public: get products by seller id (admin may use)
+    @GetMapping("/seller/{sellerId}")
+    public List<Product> getProductsBySeller(@PathVariable Long sellerId) {
+        return productService.getProductsBySeller(sellerId);
+    }
+
+    // Get all products by category
+    @GetMapping("/category/{categoryId}")
+    public List<Product> getProductsByCategory(@PathVariable Long categoryId) {
+        return productService.getProductsByCategory(categoryId);
+    }
+
+    // Get product by ID
+    @GetMapping("/{id}")
+    public Product getProductById(@PathVariable Long id) {
+        return productService.getProductById(id);
+    }
+
+    // Search & filters (public)
+    @GetMapping("/search")
+    public List<Product> searchProducts(@RequestParam String keyword) {
+        return productService.searchProducts(keyword);
+    }
+
+    @GetMapping("/filter/price")
+    public List<Product> filterByPrice(@RequestParam Double min, @RequestParam Double max) {
+        return productService.filterByPrice(min, max);
+    }
+
+    @GetMapping("/search-filter")
+    public List<Product> searchAndFilter(@RequestParam String keyword, @RequestParam Double min, @RequestParam Double max) {
+        return productService.searchAndFilter(keyword, min, max);
+    }
+
+    private User getUserFromAuthHeader(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) throw new RuntimeException("Invalid auth header");
+        String token = authHeader.substring(7);
+        String email = jwtUtil.extractUsername(token);
+        return userService.getUserByEmail(email);
+    }
+}
+//package com.rishi.ecom.controller;
+//
+//import com.rishi.ecom.entity.Product;
+//import com.rishi.ecom.service.ProductService;
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.web.bind.annotation.*;
+//
+//import java.util.List;
+//
+//@RestController
+//@RequestMapping("/api/products")
+//@CrossOrigin(origins = "http://localhost:5173")
+//public class ProductController {
+//
+//    @Autowired
+//    private ProductService productService;
+//
+//    // Add product under category (Seller only)
+//    @PostMapping("/add")
+//    public Product addProduct(
+//            @RequestParam Long sellerId,
+//            @RequestParam Long categoryId,
+//            @RequestBody Product product
+//    ) {
+//        return productService.addProduct(sellerId, categoryId, product);
+//    }
+//
+//    // Update product (Seller’s own / Admin any)
+//    @PutMapping("/{id}")
+//    public Product updateProduct(
+//            @PathVariable Long id,
+//            @RequestParam Long requesterId,
+//            @RequestParam(required = false) Long categoryId,
+//            @RequestBody Product product
+//    ) {
+//        return productService.updateProduct(requesterId, id, product, categoryId);
+//    }
+//
+//    // Delete product (Seller’s own / Admin any)
+//    @DeleteMapping("/{id}")
+//    public String deleteProduct(
+//            @PathVariable Long id,
+//            @RequestParam Long requesterId
+//    ) {
+//        productService.deleteProduct(requesterId, id);
+//        return "Product deleted successfully!";
+//    }
+//
+//    // Get all products
+//    @GetMapping
+//    public List<Product> getAllProducts() {
+//        return productService.getAllProducts();
+//    }
+//
+//    // Get all products by a seller
+//    @GetMapping("/seller/{sellerId}")
+//    public List<Product> getProductsBySeller(@PathVariable Long sellerId) {
+//        return productService.getProductsBySeller(sellerId);
+//    }
+//
+//    // Get all products by category
+//    @GetMapping("/category/{categoryId}")
+//    public List<Product> getProductsByCategory(@PathVariable Long categoryId) {
+//        return productService.getProductsByCategory(categoryId);
+//    }
+//
+//    // Get a single product by ID
+//    @GetMapping("/{id}")
+//    public Product getProductById(@PathVariable Long id) {
+//        return productService.getProductById(id);
+//    }
+//
+//    // Search products by name
+//    @GetMapping("/search")
+//    public List<Product> searchProducts(@RequestParam String keyword) {
+//        return productService.searchProducts(keyword);
+//    }
+//
+//    // Filter products by price range
+//    @GetMapping("/filter/price")
+//    public List<Product> filterByPrice(
+//            @RequestParam Double min,
+//            @RequestParam Double max
+//    ) {
+//        return productService.filterByPrice(min, max);
+//    }
+//
+//    // Combined search + filter
+//    @GetMapping("/search-filter")
+//    public List<Product> searchAndFilter(
+//            @RequestParam String keyword,
+//            @RequestParam Double min,
+//            @RequestParam Double max
+//    ) {
+//        return productService.searchAndFilter(keyword, min, max);
+//    }
+//}
