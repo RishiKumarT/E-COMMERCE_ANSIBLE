@@ -4,6 +4,7 @@ import com.rishi.ecom.entity.Category;
 import com.rishi.ecom.entity.Product;
 import com.rishi.ecom.entity.User;
 import com.rishi.ecom.repository.CategoryRepository;
+import com.rishi.ecom.repository.OrderItemRepository;
 import com.rishi.ecom.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,9 @@ public class ProductService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private OrderItemRepository orderItemRepository;
 
     @Autowired
     private CategoryRepository categoryRepository;
@@ -104,6 +108,16 @@ public class ProductService {
     }
 
     // Delete product
+    // public void deleteProductAsSeller(Long sellerId, Long productId) {
+    //     Product product = productRepository.findById(productId)
+    //             .orElseThrow(() -> new RuntimeException("Product not found"));
+
+    //     if (!product.getSeller().getId().equals(sellerId)) {
+    //         throw new RuntimeException("Sellers can only delete their own products!");
+    //     }
+
+    //     productRepository.delete(product);
+    // }
     public void deleteProductAsSeller(Long sellerId, Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -112,12 +126,28 @@ public class ProductService {
             throw new RuntimeException("Sellers can only delete their own products!");
         }
 
+        if (!orderItemRepository.findByProduct(product).isEmpty()) {
+            throw new RuntimeException("❌ Cannot delete product: It has already been ordered!");
+        }
+
         productRepository.delete(product);
     }
 
+
+    // public void deleteProductAsAdmin(Long productId) {
+    //     Product product = productRepository.findById(productId)
+    //             .orElseThrow(() -> new RuntimeException("Product not found"));
+    //     productRepository.delete(product);
+    // }
+    // Admin delete product
     public void deleteProductAsAdmin(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        if (!orderItemRepository.findByProduct(product).isEmpty()) {
+            throw new RuntimeException("❌ Cannot delete product: It has already been ordered!");
+        }
+
         productRepository.delete(product);
     }
 

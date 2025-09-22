@@ -6,6 +6,8 @@ import com.rishi.ecom.repository.CategoryRepository;
 import com.rishi.ecom.security.JwtUtil;
 import com.rishi.ecom.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,8 +24,8 @@ public class CategoryController {
 
     // Create category (Admin only)
     @PostMapping
-    public Category createCategory(@RequestHeader("Authorization") String authHeader, @RequestBody Category category) {
-        User admin = getUserFromAuthHeader(authHeader);
+    public Category createCategory(@RequestBody Category category) {
+        User admin = getCurrentUser();
         if (admin.getRole() != User.Role.ADMIN) throw new RuntimeException("Only ADMIN can add categories!");
         return categoryRepository.save(category);
     }
@@ -42,10 +44,8 @@ public class CategoryController {
 
     // Update category (Admin only)
     @PutMapping("/{id}")
-    public Category updateCategory(@RequestHeader("Authorization") String authHeader,
-                                   @PathVariable Long id,
-                                   @RequestBody Category updatedCategory) {
-        User admin = getUserFromAuthHeader(authHeader);
+    public Category updateCategory(@PathVariable Long id, @RequestBody Category updatedCategory) {
+        User admin = getCurrentUser();
         if (admin.getRole() != User.Role.ADMIN) throw new RuntimeException("Only ADMIN can update categories!");
         Category category = categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found"));
         category.setName(updatedCategory.getName());
@@ -54,16 +54,19 @@ public class CategoryController {
 
     // Delete category (Admin only)
     @DeleteMapping("/{id}")
-    public String deleteCategory(@RequestHeader("Authorization") String authHeader, @PathVariable Long id) {
-        User admin = getUserFromAuthHeader(authHeader);
+    public String deleteCategory(@PathVariable Long id) {
+        User admin = getCurrentUser();
         if (admin.getRole() != User.Role.ADMIN) throw new RuntimeException("Only ADMIN can delete categories!");
         categoryRepository.deleteById(id);
         return "Category deleted successfully!";
     }
 
-    private User getUserFromAuthHeader(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) throw new RuntimeException("Missing Authorization header");
-        String email = jwtUtil.extractUsername(authHeader.substring(7));
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+        String email = authentication.getName();
         return userService.getUserByEmail(email);
     }
 }

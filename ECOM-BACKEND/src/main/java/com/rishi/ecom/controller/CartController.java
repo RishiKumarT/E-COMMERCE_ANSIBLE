@@ -6,6 +6,8 @@ import com.rishi.ecom.security.JwtUtil;
 import com.rishi.ecom.service.CartService;
 import com.rishi.ecom.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,38 +22,38 @@ public class CartController {
 
     // Get authenticated user's cart
     @GetMapping
-    public Cart getCart(@RequestHeader("Authorization") String authHeader) {
-        User user = getUserFromAuthHeader(authHeader);
+    public Cart getCart() {
+        User user = getCurrentUser();
         return cartService.getCart(user.getId());
     }
 
     // Add product to cart (user)
     @PostMapping("/add")
-    public Cart addToCart(@RequestHeader("Authorization") String authHeader,
-                          @RequestParam Long productId,
-                          @RequestParam int quantity) {
-        User user = getUserFromAuthHeader(authHeader);
+    public Cart addToCart(@RequestParam Long productId, @RequestParam int quantity) {
+        User user = getCurrentUser();
         return cartService.addToCart(user.getId(), productId, quantity);
     }
 
     // Remove item
     @DeleteMapping("/remove/{cartItemId}")
-    public Cart removeFromCart(@RequestHeader("Authorization") String authHeader,
-                               @PathVariable Long cartItemId) {
-        User user = getUserFromAuthHeader(authHeader);
+    public Cart removeFromCart(@PathVariable Long cartItemId) {
+        User user = getCurrentUser();
         return cartService.removeFromCart(user.getId(), cartItemId);
     }
 
     // Clear cart
     @DeleteMapping("/clear")
-    public Cart clearCart(@RequestHeader("Authorization") String authHeader) {
-        User user = getUserFromAuthHeader(authHeader);
+    public Cart clearCart() {
+        User user = getCurrentUser();
         return cartService.clearCart(user.getId());
     }
 
-    private User getUserFromAuthHeader(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) throw new RuntimeException("Missing Authorization header");
-        String email = jwtUtil.extractUsername(authHeader.substring(7));
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+        String email = authentication.getName();
         return userService.getUserByEmail(email);
     }
 }

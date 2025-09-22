@@ -4,6 +4,8 @@ import com.rishi.ecom.entity.User;
 import com.rishi.ecom.security.JwtUtil;
 import com.rishi.ecom.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,15 +27,15 @@ public class UserController {
 
     // Admin: Get all users
     @GetMapping
-    public List<User> getAllUsers(@RequestHeader("Authorization") String authHeader) {
-        User requester = getUserFromAuthHeader(authHeader);
+    public List<User> getAllUsers() {
+        User requester = getCurrentUser();
         return userService.getAllUsers(requester);
     }
 
     // Get user by ID (Admin or self)
     @GetMapping("/{id}")
-    public User getUser(@RequestHeader("Authorization") String authHeader, @PathVariable Long id) {
-        User requester = getUserFromAuthHeader(authHeader);
+    public User getUser(@PathVariable Long id) {
+        User requester = getCurrentUser();
         // allow admin or owner
         if (requester.getRole() != User.Role.ADMIN && !requester.getId().equals(id)) {
             throw new RuntimeException("Access denied!");
@@ -43,36 +45,33 @@ public class UserController {
 
     // Update user (Admin or self)
     @PutMapping("/{id}")
-    public User updateUser(
-            @RequestHeader("Authorization") String authHeader,
-            @PathVariable Long id,
-            @RequestBody User updatedUser
-    ) {
-        User requester = getUserFromAuthHeader(authHeader);
+    public User updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
+        User requester = getCurrentUser();
         return userService.updateUser(requester, id, updatedUser);
     }
 
     // Delete user (Admin or self)
     @DeleteMapping("/{id}")
-    public String deleteUser(
-            @RequestHeader("Authorization") String authHeader,
-            @PathVariable Long id
-    ) {
-        User requester = getUserFromAuthHeader(authHeader);
+    public String deleteUser(@PathVariable Long id) {
+        User requester = getCurrentUser();
         userService.deleteUser(requester, id);
         return "User deleted successfully!";
     }
 
     // Helper to extract authenticated User from header
-    private User getUserFromAuthHeader(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new RuntimeException("Missing or invalid Authorization header");
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
         }
-        String token = authHeader.substring(7);
-        String email = jwtUtil.extractUsername(token);
+        String email = authentication.getName();
         return userService.getUserByEmail(email);
     }
+
 }
+
+
+
 //package com.rishi.ecom.controller;
 //
 //import com.rishi.ecom.entity.User;

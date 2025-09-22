@@ -6,6 +6,10 @@ import com.rishi.ecom.security.JwtUtil;
 import com.rishi.ecom.service.ProductService;
 import com.rishi.ecom.service.UserService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,12 +27,11 @@ public class ProductController {
     // Seller adds product under category. If requester is ADMIN, optional sellerId param can be provided to add on behalf.
     @PostMapping("/add")
     public Product addProduct(
-            @RequestHeader("Authorization") String authHeader,
             @RequestParam Long categoryId,
             @RequestParam(required = false) Long sellerId, // admin may pass sellerId
             @RequestBody Product product
     ) {
-        User requester = getUserFromAuthHeader(authHeader);
+        User requester = getCurrentUser();
 
         if (requester.getRole() == User.Role.SELLER) {
             // seller adds product as themselves
@@ -46,12 +49,11 @@ public class ProductController {
  // Update product (Seller's own or Admin any)
     @PutMapping("/{id}")
     public Product updateProduct(
-            @RequestHeader("Authorization") String authHeader,
             @PathVariable Long id,
             @RequestParam(required = false) Long categoryId,
             @RequestBody Product product
     ) {
-        User requester = getUserFromAuthHeader(authHeader);
+        User requester = getCurrentUser();
 
         if (requester.getRole() == User.Role.ADMIN) {
             return productService.updateProductAsAdmin(id, product, categoryId);
@@ -63,12 +65,23 @@ public class ProductController {
     }
 
  // Delete product (Seller's own or Admin any)
+    // @DeleteMapping("/{id}")
+    // public String deleteProduct(@PathVariable Long id) {
+    //     User requester = getCurrentUser();
+
+    //     if (requester.getRole() == User.Role.ADMIN) {
+    //         productService.deleteProductAsAdmin(id);
+    //     } else if (requester.getRole() == User.Role.SELLER) {
+    //         productService.deleteProductAsSeller(requester.getId(), id);
+    //     } else {
+    //         throw new RuntimeException("Only SELLER or ADMIN can delete products!");
+    //     }
+    //     return "Product deleted successfully!";
+    // }
     @DeleteMapping("/{id}")
-    public String deleteProduct(
-            @RequestHeader("Authorization") String authHeader,
-            @PathVariable Long id
-    ) {
-        User requester = getUserFromAuthHeader(authHeader);
+public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+    try {
+        User requester = getCurrentUser();
 
         if (requester.getRole() == User.Role.ADMIN) {
             productService.deleteProductAsAdmin(id);
@@ -77,8 +90,13 @@ public class ProductController {
         } else {
             throw new RuntimeException("Only SELLER or ADMIN can delete products!");
         }
-        return "Product deleted successfully!";
+
+        return ResponseEntity.ok("✅ Product deleted successfully!");
+    } catch (RuntimeException e) {
+        // 🔴 Catch our custom exception and return a 400 Bad Request
+        return ResponseEntity.badRequest().body(e.getMessage());
     }
+}
 
     // Get all products (public)
     @GetMapping
@@ -88,8 +106,8 @@ public class ProductController {
 
     // Seller gets own products
     @GetMapping("/my")
-    public List<Product> getMyProducts(@RequestHeader("Authorization") String authHeader) {
-        User requester = getUserFromAuthHeader(authHeader);
+    public List<Product> getMyProducts() {
+        User requester = getCurrentUser();
         if (requester.getRole() != User.Role.SELLER) {
             throw new RuntimeException("Only sellers can access their products");
         }
@@ -130,10 +148,12 @@ public class ProductController {
         return productService.searchAndFilter(keyword, min, max);
     }
 
-    private User getUserFromAuthHeader(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) throw new RuntimeException("Invalid auth header");
-        String token = authHeader.substring(7);
-        String email = jwtUtil.extractUsername(token);
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+        String email = authentication.getName();
         return userService.getUserByEmail(email);
     }
 }

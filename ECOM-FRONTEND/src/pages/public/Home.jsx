@@ -1,93 +1,214 @@
-import { useEffect, useState } from "react";
-import apiClient from "../../api/apiClient";
-import { useAuth } from "../../auth/AuthContext";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../auth/AuthContext';
+import ProductCard from '../../components/ProductCard';
+import { CategoryFilter, SearchBar, PriceFilter } from '../../components/Filters';
+import { LoadingSpinner, ErrorMessage, EmptyState } from '../../components/UI';
+import apiClient from '../../api/apiClient';
 
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [priceFilter, setPriceFilter] = useState({ min: null, max: null });
+  const [wishlist, setWishlist] = useState([]);
+  
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await apiClient.get("/products");
-        setProducts(response.data);
-      } catch (err) {
-        setError(err.response?.data?.message || err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchProducts();
-  }, []);
+    if (user) {
+      fetchWishlist();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [searchTerm, selectedCategory, priceFilter]);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      let url = '/products';
+      const params = new URLSearchParams();
+
+      if (searchTerm) {
+        params.append('keyword', searchTerm);
+      }
+      if (selectedCategory) {
+        params.append('categoryId', selectedCategory);
+      }
+      if (priceFilter.min !== null) {
+        params.append('min', priceFilter.min);
+      }
+      if (priceFilter.max !== null) {
+        params.append('max', priceFilter.max);
+      }
+
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      const response = await apiClient.get(url);
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+      setError('Failed to load products');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchWishlist = async () => {
+    try {
+      const response = await apiClient.get('/wishlist');
+      // Backend returns a Wishlist object with products array
+      const wishlistItems = response.data.products ? response.data.products.map(product => product.id) : [];
+      setWishlist(wishlistItems);
+    } catch (error) {
+      console.error('Failed to fetch wishlist:', error);
+      setWishlist([]); // Set empty array on error
+    }
+  };
 
   const handleAddToCart = async (productId) => {
     if (!user) {
-      alert("Please login to add items to cart");
-      navigate("/login");
+      alert('Please login to add items to cart');
       return;
     }
+
     try {
       await apiClient.post(`/cart/add?productId=${productId}&quantity=1`);
-      alert("Product added to cart");
-    } catch (err) {
-      alert(err.response?.data?.message || err.message);
+      alert('Product added to cart successfully!');
+    } catch (error) {
+      console.error('Failed to add to cart:', error);
+      alert('Failed to add product to cart');
     }
   };
 
   const handleAddToWishlist = async (productId) => {
     if (!user) {
-      alert("Please login to add items to wishlist");
-      navigate("/login");
+      alert('Please login to add items to wishlist');
       return;
     }
+
     try {
       await apiClient.post(`/wishlist/add?productId=${productId}`);
-      alert("Product added to wishlist");
-    } catch (err) {
-      alert(err.response?.data?.message || err.message);
+      setWishlist([...wishlist, productId]);
+      alert('Product added to wishlist!');
+    } catch (error) {
+      console.error('Failed to add to wishlist:', error);
+      alert('Failed to add product to wishlist');
     }
   };
 
-  if (loading) return <p className="text-center mt-10">Loading products...</p>;
-  if (error) return <p className="text-center text-red-500 mt-10">{error}</p>;
+  const handleRemoveFromWishlist = async (productId) => {
+    try {
+      await apiClient.delete(`/wishlist/remove?productId=${productId}`);
+      setWishlist(wishlist.filter(id => id !== productId));
+      alert('Product removed from wishlist!');
+    } catch (error) {
+      console.error('Failed to remove from wishlist:', error);
+      alert('Failed to remove product from wishlist');
+    }
+  };
+
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+  };
+
+  const handleCategoryChange = (categoryId) => {
+    setSelectedCategory(categoryId);
+  };
+
+  const handlePriceChange = (priceRange) => {
+    setPriceFilter(priceRange);
+  };
+
+  if (loading) {
+    return <LoadingSpinner size="large" text="Loading products..." />;
+  }
+
+  if (error) {
+    return <ErrorMessage message={error} onRetry={fetchProducts} />;
+  }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6 text-center">All Products</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((product) => (
-          <div
-            key={product.id}
-            className="border rounded shadow p-4 flex flex-col justify-between"
-          >
-            <img
-              src={product.imageUrl || "https://via.placeholder.com/150"}
-              alt={product.name}
-              className="h-40 w-full object-cover mb-4 rounded"
-            />
-            <h2 className="text-lg font-semibold">{product.name}</h2>
-            <p className="text-gray-700 mb-2">{product.description}</p>
-            <p className="font-bold mb-2">${product.price.toFixed(2)}</p>
-            <div className="flex gap-2 mt-auto">
-              <button
-                onClick={() => handleAddToCart(product.id)}
-                className="flex-1 bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
-              >
-                Add to Cart
-              </button>
-              <button
-                onClick={() => handleAddToWishlist(product.id)}
-                className="flex-1 bg-green-500 text-white py-2 rounded hover:bg-green-600 transition"
-              >
-                Wishlist
-              </button>
-            </div>
+    <div className="min-h-screen bg-surface">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-primary to-purple-600 text-white py-16">
+        <div className="container text-center">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">
+            Welcome to E-Commerce
+          </h1>
+          <p className="text-xl md:text-2xl mb-8">
+            Discover amazing products at great prices
+          </p>
+          <div className="max-w-md mx-auto">
+            <SearchBar onSearch={handleSearch} placeholder="Search for products..." />
           </div>
-        ))}
+        </div>
+      </div>
+
+      <div className="container py-8">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Filters Sidebar - Temporarily Hidden */}
+          {/* <div className="lg:w-1/5">
+            <div className="space-y-4">
+              <CategoryFilter 
+                selectedCategory={selectedCategory} 
+                onCategoryChange={handleCategoryChange} 
+              />
+              <PriceFilter onPriceChange={handlePriceChange} />
+            </div>
+          </div> */}
+
+          {/* Products Grid */}
+          <div className="w-full">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-primary mb-2">
+                {searchTerm ? `Search Results for "${searchTerm}"` : 'All Products'}
+              </h2>
+              <p className="text-secondary">
+                {products.length} product{products.length !== 1 ? 's' : ''} found
+              </p>
+            </div>
+
+            {products.length === 0 ? (
+              <EmptyState
+                title="No products found"
+                description="Try adjusting your search or filter criteria"
+                action={
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSelectedCategory(null);
+                      setPriceFilter({ min: null, max: null });
+                    }}
+                    className="btn btn-primary"
+                  >
+                    Clear Filters
+                  </button>
+                }
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {products.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onAddToCart={handleAddToCart}
+                    onAddToWishlist={handleAddToWishlist}
+                    onRemoveFromWishlist={handleRemoveFromWishlist}
+                    isInWishlist={wishlist.includes(product.id)}
+                    showActions={!!user}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

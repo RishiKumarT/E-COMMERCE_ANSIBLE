@@ -108,6 +108,16 @@ public class UserService {
         userRepository.delete(getUserById(id));
     }
 }
+
+
+
+
+
+
+
+
+
+
 //package com.rishi.ecom.service;
 //
 //import com.rishi.ecom.entity.User;

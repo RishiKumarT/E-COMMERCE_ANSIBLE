@@ -1,33 +1,117 @@
-// src/ProductCard.jsx
-import { Link } from "react-router-dom";
+import React from 'react';
+import { Link } from 'react-router-dom';
 
-export default function ProductCard({ product }) {
+const ProductCard = ({
+  product,
+  onAddToCart,
+  onAddToWishlist,
+  onRemoveFromWishlist,
+  isInWishlist,
+  showActions = true,
+}) => {
   return (
-    <div style={{
-      border: "1px solid #e0e0e0",
-      borderRadius: "8px",
-      padding: "15px",
-      textAlign: "center",
-      boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-      transition: "transform 0.2s",
-    }}
-    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
-    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-    >
-      <img src={product.imageUrl} alt={product.name} style={{ maxHeight: "150px", objectFit: "contain", marginBottom: "10px" }} />
-      <h3 style={{ fontSize: "1rem", margin: "5px 0" }}>{product.name}</h3>
-      <p style={{ color: "#4caf50", fontWeight: "bold" }}>${product.price.toFixed(2)}</p>
+    <div className="product-card large">
       <Link to={`/product/${product.id}`}>
-        <button style={{
-          marginTop: "10px",
-          padding: "8px 12px",
-          backgroundColor: "#2196f3",
-          color: "#fff",
-          border: "none",
-          borderRadius: "6px",
-          cursor: "pointer"
-        }}>View Details</button>
+        <img
+          src={product.imageUrl || '/api/placeholder/300/200'}
+          alt={product.name}
+          className="product-image"
+        />
       </Link>
+
+      <div className="product-content">
+        <Link to={`/product/${product.id}`}>
+          <h3 className="product-title">{product.name}</h3>
+        </Link>
+
+        <p className="product-description">{product.description}</p>
+
+        <div className="flex justify-between items-center mb-4">
+          <span className="product-price">${product.price}</span>
+          <span className="product-stock">
+            Stock: {product.stockQuantity || 0}
+          </span>
+        </div>
+
+        {showActions && (
+          <div className="product-actions">
+            <button
+              onClick={() => onAddToCart(product.id)}
+              className="btn btn-primary"
+            >
+              Add to Cart
+            </button>
+            <button
+              onClick={() =>
+                isInWishlist
+                  ? onRemoveFromWishlist(product.id)
+                  : onAddToWishlist(product.id)
+              }
+              className={`btn ${isInWishlist ? 'btn-danger' : 'btn-secondary'}`}
+            >
+              {isInWishlist ? 'Remove' : 'Wishlist'}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default ProductCard;
+// import React from 'react';
+// import { Link } from 'react-router-dom';
+
+// const ProductCard = ({ product, onAddToCart, onAddToWishlist, onRemoveFromWishlist, isInWishlist, showActions = true }) => {
+//   return (
+//     <div className="product-card">
+//       <Link to={`/product/${product.id}`}>
+//         <img
+//           src={product.imageUrl || '/api/placeholder/300/200'}
+//           alt={product.name}
+//           className="product-image"
+//         />
+//       </Link>
+      
+//       <div className="product-content">
+//         <Link to={`/product/${product.id}`}>
+//           <h3 className="product-title">
+//             {product.name}
+//           </h3>
+//         </Link>
+        
+//         <p className="product-description">
+//           {product.description}
+//         </p>
+        
+//         <div className="flex justify-between items-center mb-4">
+//           <span className="product-price">
+//             ${product.price}
+//           </span>
+//           <span className="product-stock">
+//             Stock: {product.stockQuantity || 0}
+//           </span>
+//         </div>
+        
+//         {showActions && (
+//           <div className="product-actions">
+//             <button
+//               onClick={() => onAddToCart(product.id)}
+//               className="btn btn-primary"
+//             >
+//               Add to Cart
+//             </button>
+//             <button
+//               onClick={() => isInWishlist ? onRemoveFromWishlist(product.id) : onAddToWishlist(product.id)}
+//               className={`btn ${isInWishlist ? 'btn-danger' : 'btn-secondary'}`}
+//             >
+//               {isInWishlist ? 'Remove' : 'Wishlist'}
+//             </button>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default ProductCard;

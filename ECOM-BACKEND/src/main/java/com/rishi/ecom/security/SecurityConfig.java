@@ -35,7 +35,13 @@ public class SecurityConfig {
             .cors() // <-- Enable CORS
             .and()
             .authorizeHttpRequests(auth -> auth
-                    .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/products/category/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/products/seller/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/products/search").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/products/filter/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/products/search-filter").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/products/{id}").permitAll()
                     .requestMatchers("/api/auth/**", "/api/users/register").permitAll()
                     .anyRequest().authenticated()
             )

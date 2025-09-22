@@ -6,6 +6,8 @@ import com.rishi.ecom.security.JwtUtil;
 import com.rishi.ecom.service.UserService;
 import com.rishi.ecom.service.WishlistService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,28 +21,29 @@ public class WishlistController {
     private final JwtUtil jwtUtil;
 
     @PostMapping("/add")
-    public Wishlist addToWishlist(@RequestHeader("Authorization") String authHeader,
-                                  @RequestParam Long productId) {
-        User user = getUserFromAuthHeader(authHeader);
+    public Wishlist addToWishlist(@RequestParam Long productId) {
+        User user = getCurrentUser();
         return wishlistService.addToWishlist(user.getId(), productId);
     }
 
     @DeleteMapping("/remove")
-    public Wishlist removeFromWishlist(@RequestHeader("Authorization") String authHeader,
-                                       @RequestParam Long productId) {
-        User user = getUserFromAuthHeader(authHeader);
+    public Wishlist removeFromWishlist(@RequestParam Long productId) {
+        User user = getCurrentUser();
         return wishlistService.removeFromWishlist(user.getId(), productId);
     }
 
     @GetMapping
-    public Wishlist getWishlist(@RequestHeader("Authorization") String authHeader) {
-        User user = getUserFromAuthHeader(authHeader);
+    public Wishlist getWishlist() {
+        User user = getCurrentUser();
         return wishlistService.getWishlist(user.getId());
     }
 
-    private User getUserFromAuthHeader(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) throw new RuntimeException("Missing Authorization header");
-        String email = jwtUtil.extractUsername(authHeader.substring(7));
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+        String email = authentication.getName();
         return userService.getUserByEmail(email);
     }
 }

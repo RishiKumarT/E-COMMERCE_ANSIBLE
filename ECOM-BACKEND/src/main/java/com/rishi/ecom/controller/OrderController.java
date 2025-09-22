@@ -6,6 +6,8 @@ import com.rishi.ecom.security.JwtUtil;
 import com.rishi.ecom.service.OrderService;
 import com.rishi.ecom.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,22 +24,22 @@ public class OrderController {
 
     // Place order for authenticated user
     @PostMapping("/place")
-    public Order placeOrder(@RequestHeader("Authorization") String authHeader) {
-        User user = getUserFromAuthHeader(authHeader);
+    public Order placeOrder() {
+        User user = getCurrentUser();
         return orderService.placeOrder(user.getId());
     }
 
     // User gets own orders
     @GetMapping("/my")
-    public List<Order> getUserOrders(@RequestHeader("Authorization") String authHeader) {
-        User user = getUserFromAuthHeader(authHeader);
+    public List<Order> getUserOrders() {
+        User user = getCurrentUser();
         return orderService.getUserOrders(user.getId());
     }
 
     // Admin gets all orders
     @GetMapping("/all")
-    public List<Order> getAllOrders(@RequestHeader("Authorization") String authHeader) {
-        User admin = getUserFromAuthHeader(authHeader);
+    public List<Order> getAllOrders() {
+        User admin = getCurrentUser();
         if (admin.getRole() != User.Role.ADMIN) {
             throw new RuntimeException("Only ADMIN can view all orders!");
         }
@@ -46,19 +48,25 @@ public class OrderController {
 
     // Admin updates order status
     @PutMapping("/status/{orderId}")
-    public Order updateStatus(@RequestHeader("Authorization") String authHeader,
-                              @PathVariable Long orderId,
-                              @RequestParam String status) {
-        User admin = getUserFromAuthHeader(authHeader);
+    public Order updateStatus(@PathVariable Long orderId, @RequestParam String status) {
+        User admin = getCurrentUser();
         if (admin.getRole() != User.Role.ADMIN) {
             throw new RuntimeException("Only ADMIN can update order status!");
         }
         return orderService.updateOrderStatus(admin.getId(), orderId, status);
     }
+    @PutMapping("/cancel/{orderId}")
+    public Order cancelOrder(@PathVariable Long orderId) {
+        User user = getCurrentUser();
+        return orderService.cancelOrder(user.getId(), orderId);
+    }
 
-    private User getUserFromAuthHeader(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) throw new RuntimeException("Missing Authorization header");
-        String email = jwtUtil.extractUsername(authHeader.substring(7));
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+        String email = authentication.getName();
         return userService.getUserByEmail(email);
     }
 }
