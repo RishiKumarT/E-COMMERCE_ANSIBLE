@@ -13,10 +13,10 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**") // allow all endpoints
-                        .allowedOrigins("http://localhost:5173") // your frontend
+                registry.addMapping("/**")
+                        .allowedOriginPatterns("http://localhost:*") // any localhost port
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .allowedHeaders("*")
+                        .allowedHeaders("*")   // include Authorization header for JWT
                         .allowCredentials(true);
             }
         };

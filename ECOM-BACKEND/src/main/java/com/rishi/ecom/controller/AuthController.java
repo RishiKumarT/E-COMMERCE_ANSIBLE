@@ -18,7 +18,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:5173")
+//@CrossOrigin(origins = "*")
 @RequiredArgsConstructor // Use Lombok to inject final fields
 public class AuthController {
 
