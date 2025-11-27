@@ -2,6 +2,7 @@ package com.rishi.ecom.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -30,6 +31,22 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private AccountStatus accountStatus = AccountStatus.APPROVED;
+
+    @Builder.Default
+    private boolean approvalRequested = false;
+
+    @Builder.Default
+    private int rejectionCount = 0;
+
+    private String lastRejectionReason;
+
+    private LocalDateTime lastRequestAt;
+    private LocalDateTime lastDecisionAt;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -46,5 +63,11 @@ public class User {
 
     public enum Role {
         USER, SELLER, ADMIN
+    }
+
+    public enum AccountStatus {
+        PENDING,
+        APPROVED,
+        REJECTED
     }
 }

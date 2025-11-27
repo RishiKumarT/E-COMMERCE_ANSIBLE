@@ -34,6 +34,7 @@ public class ProductController {
         User requester = getCurrentUser();
 
         if (requester.getRole() == User.Role.SELLER) {
+            userService.ensureSellerApproved(requester);
             // seller adds product as themselves
             return productService.addProduct(requester.getId(), categoryId, product);
         } else if (requester.getRole() == User.Role.ADMIN) {
@@ -58,6 +59,7 @@ public class ProductController {
         if (requester.getRole() == User.Role.ADMIN) {
             return productService.updateProductAsAdmin(id, product, categoryId);
         } else if (requester.getRole() == User.Role.SELLER) {
+            userService.ensureSellerApproved(requester);
             return productService.updateProductAsSeller(requester.getId(), id, product, categoryId);
         } else {
             throw new RuntimeException("Only SELLER or ADMIN can update products!");
@@ -86,6 +88,7 @@ public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
         if (requester.getRole() == User.Role.ADMIN) {
             productService.deleteProductAsAdmin(id);
         } else if (requester.getRole() == User.Role.SELLER) {
+            userService.ensureSellerApproved(requester);
             productService.deleteProductAsSeller(requester.getId(), id);
         } else {
             throw new RuntimeException("Only SELLER or ADMIN can delete products!");
@@ -111,6 +114,7 @@ public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
         if (requester.getRole() != User.Role.SELLER) {
             throw new RuntimeException("Only sellers can access their products");
         }
+        userService.ensureSellerApproved(requester);
         return productService.getProductsBySeller(requester.getId());
     }
 

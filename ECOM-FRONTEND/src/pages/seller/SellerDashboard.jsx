@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { LoadingSpinner, ErrorMessage } from '../../components/UI';
 import apiClient from '../../api/apiClient';
+import { useAuth } from '../../auth/AuthContext';
 
 const SellerDashboard = () => {
+  const { user } = useAuth();
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalOrders: 0,
@@ -109,6 +111,17 @@ const SellerDashboard = () => {
             <div className="seller-stat-content">
               <div className="seller-stat-label">Low Stock</div>
               <div className="seller-stat-value">{stats.lowStockProducts}</div>
+            </div>
+          </div>
+          <div className="seller-stat-card seller-stat-card-indigo">
+            <div className="seller-stat-icon">
+              <svg className="seller-stat-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
+              </svg>
+            </div>
+            <div className="seller-stat-content">
+              <div className="seller-stat-label">Rejection Count</div>
+              <div className="seller-stat-value">{user?.rejectionCount ?? 0}</div>
             </div>
           </div>
         </div>

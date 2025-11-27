@@ -24,6 +24,7 @@ public class DataLoader {
                     .email("admin@shop.com")
                     .password(passwordEncoder.encode("admin123")) // encode here
                     .role(User.Role.ADMIN)
+                    .accountStatus(User.AccountStatus.APPROVED)
                     .build();
             userRepository.save(admin);
         }

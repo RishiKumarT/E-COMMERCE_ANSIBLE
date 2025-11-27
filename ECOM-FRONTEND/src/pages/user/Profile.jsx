@@ -45,7 +45,7 @@ const Profile = () => {
         name: formData.name,
         email: formData.email
       });
-      
+
       updateUser(response.data);
       setSuccess('Profile updated successfully!');
     } catch (error) {
@@ -62,15 +62,22 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">Profile Settings</h1>
-            
+      <div className="max-w-3xl mx-auto px-4">
+
+        {/* Main Card */}
+        <div className="card">
+          <div className="card-header">
+            <h1 className="text-2xl font-bold text-primary">Profile Settings</h1>
+          </div>
+
+          <div className="card-body">
             <form onSubmit={handleSubmit} className="space-y-6">
+
+              {/* Name & Email */}
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+
+                <div className="form-group">
+                  <label htmlFor="name" className="form-label">
                     Full Name
                   </label>
                   <input
@@ -79,12 +86,12 @@ const Profile = () => {
                     id="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="form-input"
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                <div className="form-group">
+                  <label htmlFor="email" className="form-label">
                     Email Address
                   </label>
                   <input
@@ -93,13 +100,14 @@ const Profile = () => {
                     id="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="form-input"
                   />
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+              {/* Role */}
+              <div className="form-group">
+                <label htmlFor="role" className="form-label">
                   Account Type
                 </label>
                 <input
@@ -108,30 +116,34 @@ const Profile = () => {
                   id="role"
                   value={formData.role}
                   disabled
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500 sm:text-sm"
+                  className="form-input bg-gray-100 text-gray-500"
                 />
-                <p className="mt-1 text-sm text-gray-500">Account type cannot be changed</p>
+                <p className="text-sm text-muted mt-1">Account type cannot be changed</p>
               </div>
 
+              {/* Error & Success Messages */}
               {error && <ErrorMessage message={error} />}
               {success && <SuccessMessage message={success} />}
 
+              {/* Save Button */}
               <div className="flex justify-end">
                 <button
                   type="submit"
                   disabled={saving}
-                  className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn btn-primary"
                 >
                   {saving ? (
-                    <LoadingSpinner size="small" text="" />
+                    <LoadingSpinner size="small" />
                   ) : (
                     'Save Changes'
                   )}
                 </button>
               </div>
+
             </form>
           </div>
         </div>
+
       </div>
     </div>
   );

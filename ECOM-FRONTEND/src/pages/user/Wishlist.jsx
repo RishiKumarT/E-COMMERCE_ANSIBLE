@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { LoadingSpinner, ErrorMessage, EmptyState } from '../../components/UI';
-import apiClient from '../../api/apiClient';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { LoadingSpinner, ErrorMessage, EmptyState } from "../../components/UI";
+import apiClient from "../../api/apiClient";
 
 const Wishlist = () => {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [removing, setRemoving] = useState(false);
 
   useEffect(() => {
@@ -15,12 +15,11 @@ const Wishlist = () => {
 
   const fetchWishlistItems = async () => {
     try {
-      const response = await apiClient.get('/wishlist');
-      // Backend returns a Wishlist object with products array
+      const response = await apiClient.get("/wishlist");
       setWishlistItems(response.data.products || []);
     } catch (error) {
-      console.error('Failed to fetch wishlist items:', error);
-      setError('Failed to load wishlist items');
+      console.error("Failed to fetch wishlist items:", error);
+      setError("Failed to load wishlist items");
     } finally {
       setLoading(false);
     }
@@ -30,10 +29,10 @@ const Wishlist = () => {
     setRemoving(true);
     try {
       await apiClient.delete(`/wishlist/remove?productId=${productId}`);
-      setWishlistItems(wishlistItems.filter(item => item.id !== productId));
+      setWishlistItems((prev) => prev.filter((item) => item.id !== productId));
     } catch (error) {
-      console.error('Failed to remove from wishlist:', error);
-      alert('Failed to remove item from wishlist');
+      console.error("Failed to remove from wishlist:", error);
+      alert("Failed to remove item from wishlist");
     } finally {
       setRemoving(false);
     }
@@ -42,10 +41,10 @@ const Wishlist = () => {
   const addToCart = async (productId) => {
     try {
       await apiClient.post(`/cart/add?productId=${productId}&quantity=1`);
-      alert('Product added to cart successfully!');
+      alert("Product added to cart successfully!");
     } catch (error) {
-      console.error('Failed to add to cart:', error);
-      alert('Failed to add product to cart');
+      console.error("Failed to add to cart:", error);
+      alert("Failed to add product to cart");
     }
   };
 
@@ -62,7 +61,9 @@ const Wishlist = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">My Wishlist</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">
+              My Wishlist
+            </h1>
 
             {wishlistItems.length === 0 ? (
               <EmptyState
@@ -71,7 +72,7 @@ const Wishlist = () => {
                 action={
                   <Link
                     to="/"
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200"
+                    className="btn btn-primary"
                   >
                     Browse Products
                   </Link>
@@ -80,48 +81,48 @@ const Wishlist = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {wishlistItems.map((product) => (
-                  <div key={product.id} className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
+                  <div
+                    key={product.id}
+                    className="product-card large"
+                  >
                     <Link to={`/product/${product.id}`}>
                       <img
-                        src={product.imageUrl || '/api/placeholder/300/200'}
+                        src={product.imageUrl || "/api/placeholder/300/200"}
                         alt={product.name}
-                        className="w-full h-48 object-cover rounded-t-lg hover:scale-105 transition-transform duration-300"
+                        className="product-image"
                       />
                     </Link>
-                    
-                    <div className="p-4">
+
+                    <div className="product-content">
                       <Link to={`/product/${product.id}`}>
-                        <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors duration-200 mb-2">
-                          {product.name}
-                        </h3>
+                        <h3 className="product-title">{product.name}</h3>
                       </Link>
-                      
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+
+                      <p className="product-description">
                         {product.description}
                       </p>
-                      
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xl font-bold text-blue-600">
-                          ${product.price}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          Stock: {product.stock}
+
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="product-price">${product.price}</span>
+                        <span className="text-xs text-gray-500">
+                          Stock: {product.stockQuantity}
                         </span>
                       </div>
-                      
-                      <div className="flex space-x-2">
+
+                      <div className="product-actions">
                         <button
                           onClick={() => addToCart(product.id)}
-                          className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
+                          className="btn btn-primary"
                         >
-                          Add to Cart
+                          Add to cart
                         </button>
+
                         <button
                           onClick={() => removeFromWishlist(product.id)}
                           disabled={removing}
-                          className="px-4 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors duration-200 text-sm font-medium disabled:opacity-50"
+                          className="btn btn-danger"
                         >
-                          Remove
+                          {removing ? "..." : "Remove"}
                         </button>
                       </div>
                     </div>

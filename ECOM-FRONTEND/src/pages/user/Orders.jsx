@@ -102,10 +102,18 @@ const Orders = () => {
             ) : (
               <div className="space-y-6">
                 {orders.map((order) => (
-                  <div
-                    key={order.id}
-                    className="border border-gray-200 rounded-lg p-6"
-                  >
+                 <div
+                 key={order.id}
+                 className="order-card"
+                 style={{ 
+                   borderRadius: "var(--radius-lg)",
+                   border: "1px solid var(--border-light)",
+                   boxShadow: "var(--shadow-sm)",
+                   padding: "1.5rem",
+                   background: "white"
+                 }}
+               >
+               
                     {/* Header */}
                     <div className="flex justify-between items-start mb-4">
                       <div>

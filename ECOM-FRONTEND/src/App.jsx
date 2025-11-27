@@ -6,6 +6,8 @@ import { NavbarPublic, NavbarUser, NavbarSeller, NavbarAdmin } from "./component
 import Home from "./pages/public/Home";
 import Login from "./pages/public/Login";
 import Register from "./pages/public/Register";
+import ForgotPassword from "./pages/public/ForgotPassword";
+import ResetPassword from "./pages/public/ResetPassword";
 import Profile from "./pages/user/Profile";
 import Cart from "./pages/user/Cart";
 import Wishlist from "./pages/user/Wishlist";
@@ -13,6 +15,7 @@ import Orders from "./pages/user/Orders";
 import SellerDashboard from "./pages/seller/SellerDashboard";
 import SellerProducts from "./pages/seller/SellerProducts";
 import AddEditProduct from "./pages/seller/AddEditProduct";
+import SellerOnboarding from "./pages/seller/SellerOnboarding";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminProducts from "./pages/admin/AdminProducts";
@@ -40,6 +43,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/product/:id" element={<ProductDetail />} />
         {/* User Routes */}
         <Route
@@ -71,7 +76,7 @@ function App() {
         <Route
           path="/seller/dashboard"
           element={
-            <PrivateRoute allowedRoles={["SELLER"]}>
+            <PrivateRoute allowedRoles={["SELLER"]} requireSellerApproval>
               <SellerDashboard />
             </PrivateRoute>
           }
@@ -79,7 +84,7 @@ function App() {
         <Route
           path="/seller/products"
           element={
-            <PrivateRoute allowedRoles={["SELLER"]}>
+            <PrivateRoute allowedRoles={["SELLER"]} requireSellerApproval>
               <SellerProducts />
             </PrivateRoute>
           }
@@ -87,7 +92,7 @@ function App() {
         <Route
           path="/seller/product/add"
           element={
-            <PrivateRoute allowedRoles={["SELLER"]}>
+            <PrivateRoute allowedRoles={["SELLER"]} requireSellerApproval>
               <AddEditProduct />
             </PrivateRoute>
           }
@@ -95,8 +100,16 @@ function App() {
         <Route
           path="/seller/products/edit/:id"
           element={
-            <PrivateRoute allowedRoles={["SELLER"]}>
+            <PrivateRoute allowedRoles={["SELLER"]} requireSellerApproval>
               <AddEditProduct />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/seller/onboarding"
+          element={
+            <PrivateRoute allowedRoles={["SELLER"]}>
+              <SellerOnboarding />
             </PrivateRoute>
           }
         />

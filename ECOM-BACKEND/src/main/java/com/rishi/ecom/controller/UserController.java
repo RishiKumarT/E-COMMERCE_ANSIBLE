@@ -1,5 +1,7 @@
 package com.rishi.ecom.controller;
 
+import com.rishi.ecom.dto.SellerDecisionRequest;
+import com.rishi.ecom.dto.UserDetailResponse;
 import com.rishi.ecom.entity.User;
 import com.rishi.ecom.security.JwtUtil;
 import com.rishi.ecom.service.UserService;
@@ -32,6 +34,12 @@ public class UserController {
         return userService.getAllUsers(requester);
     }
 
+    @GetMapping("/sellers/pending")
+    public List<User> getPendingSellers() {
+        User requester = getCurrentUser();
+        return userService.getPendingSellers(requester);
+    }
+
     // Get user by ID (Admin or self)
     @GetMapping("/{id}")
     public User getUser(@PathVariable Long id) {
@@ -41,6 +49,12 @@ public class UserController {
             throw new RuntimeException("Access denied!");
         }
         return userService.getUserById(id);
+    }
+
+    @GetMapping("/{id}/details")
+    public UserDetailResponse getUserDetails(@PathVariable Long id) {
+        User requester = getCurrentUser();
+        return userService.getUserDetails(requester, id);
     }
 
     // Update user (Admin or self)
@@ -56,6 +70,24 @@ public class UserController {
         User requester = getCurrentUser();
         userService.deleteUser(requester, id);
         return "User deleted successfully!";
+    }
+
+    @PostMapping("/sellers/{id}/approve")
+    public User approveSeller(@PathVariable Long id) {
+        User requester = getCurrentUser();
+        return userService.approveSeller(requester, id);
+    }
+
+    @PostMapping("/sellers/{id}/reject")
+    public User rejectSeller(@PathVariable Long id, @RequestBody SellerDecisionRequest request) {
+        User requester = getCurrentUser();
+        return userService.rejectSeller(requester, id, request != null ? request.getReason() : null);
+    }
+
+    @PostMapping("/sellers/request-approval")
+    public User requestApproval() {
+        User requester = getCurrentUser();
+        return userService.requestSellerApproval(requester);
     }
 
     // Helper to extract authenticated User from header

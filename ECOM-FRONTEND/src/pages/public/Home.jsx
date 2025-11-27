@@ -146,7 +146,7 @@ const Home = () => {
             Discover amazing products at great prices
           </p>
           <div className="max-w-md mx-auto">
-            <SearchBar onSearch={handleSearch} placeholder="Search for products..." />
+            <SearchBar onSearch={handleSearch} placeholder="      Search for products..." />
           </div>
         </div>
       </div>

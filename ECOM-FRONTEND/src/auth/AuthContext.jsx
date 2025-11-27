@@ -1,7 +1,26 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
 
 const AuthContext = createContext();
+
+const mapUserPayload = (payload = {}) => ({
+  id: payload.id,
+  name: payload.name,
+  email: payload.email,
+  role: payload.role,
+  accountStatus: payload.accountStatus || 'APPROVED',
+  approvalRequested: payload.approvalRequested ?? false,
+  rejectionCount: payload.rejectionCount ?? 0,
+  lastRejectionReason: payload.lastRejectionReason || null,
+});
+
+const normalizeStoredUser = (storedUser = {}) => ({
+  accountStatus: 'APPROVED',
+  approvalRequested: false,
+  rejectionCount: 0,
+  lastRejectionReason: null,
+  ...storedUser,
+});
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -17,40 +36,41 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    
-    if (token && userData) {
+    const stored = localStorage.getItem('user');
+
+    if (token && stored) {
       apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(JSON.parse(userData));
+      const parsed = normalizeStoredUser(JSON.parse(stored));
+      setUser(parsed);
+      localStorage.setItem('user', JSON.stringify(parsed));
     }
     setLoading(false);
   }, []);
 
+  const persistUser = (nextUser) => {
+    const normalized = normalizeStoredUser(nextUser);
+    localStorage.setItem('user', JSON.stringify(normalized));
+    setUser(normalized);
+    return normalized;
+  };
+
   const login = async (credentials) => {
     try {
       const response = await apiClient.post('/auth/login', credentials);
-      
-      const { token, id, name, email, role } = response.data;
-      
-      // Create user object from the response
-      const userData = {
-        id,
-        name,
-        email,
-        role
-      };
-      
+
+      const { token } = response.data;
+      const mappedUser = mapUserPayload(response.data);
+
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
       apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(userData);
-      
-      return { success: true, user: userData };
+      persistUser(mappedUser);
+
+      return { success: true, user: mappedUser };
     } catch (error) {
       console.error('Login failed:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Login failed' 
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Login failed',
       };
     }
   };
@@ -61,9 +81,9 @@ export const AuthProvider = ({ children }) => {
       return { success: true, data: response.data };
     } catch (error) {
       console.error('Registration failed:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Registration failed' 
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Registration failed',
       };
     }
   };
@@ -75,8 +95,27 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const updateUser = (updatedUser) => {
-    setUser(updatedUser);
+  const updateUser = (partialUser) => {
+    if (!partialUser) return;
+    setUser((prev) => {
+      const merged = normalizeStoredUser({
+        ...(prev || {}),
+        ...partialUser,
+      });
+      localStorage.setItem('user', JSON.stringify(merged));
+      return merged;
+    });
+  };
+
+  const refreshUserFromServer = async () => {
+    if (!user) return null;
+    try {
+      const response = await apiClient.get(`/users/${user.id}`);
+      return persistUser(mapUserPayload(response.data));
+    } catch (error) {
+      console.error('Failed to refresh user profile', error);
+      throw error;
+    }
   };
 
   const value = {
@@ -85,12 +124,9 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
-    loading
+    refreshUserFromServer,
+    loading,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

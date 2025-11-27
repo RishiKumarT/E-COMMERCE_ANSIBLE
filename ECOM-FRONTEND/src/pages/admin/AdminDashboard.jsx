@@ -9,7 +9,9 @@ const AdminDashboard = () => {
     totalProducts: 0,
     totalOrders: 0,
     totalRevenue: 0,
-    pendingOrders: 0
+    pendingOrders: 0,
+    pendingSellers: 0,
+    totalSellerRejections: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -30,13 +32,16 @@ const AdminDashboard = () => {
       const products = productsResponse.data;
       const orders = ordersResponse.data;
 
+      const sellerList = users.filter(user => user.role === 'SELLER');
       setStats({
         totalUsers: users.filter(user => user.role === 'USER').length,
-        totalSellers: users.filter(user => user.role === 'SELLER').length,
+        totalSellers: sellerList.length,
         totalProducts: products.length,
         totalOrders: orders.length,
         totalRevenue: orders.reduce((sum, order) => sum + order.totalAmount, 0),
-        pendingOrders: orders.filter(order => order.status === 'PENDING').length
+        pendingOrders: orders.filter(order => order.status === 'PENDING').length,
+        pendingSellers: sellerList.filter(seller => seller.accountStatus === 'PENDING').length,
+        totalSellerRejections: sellerList.reduce((sum, seller) => sum + (seller.rejectionCount || 0), 0)
       });
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
@@ -73,6 +78,30 @@ const AdminDashboard = () => {
             <div className="stat-content">
               <div className="stat-label">Total Users</div>
               <div className="stat-value">{stats.totalUsers}</div>
+            </div>
+          </div>
+
+          <div className="stat-card stat-card-green">
+            <div className="stat-icon">
+              <svg className="stat-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a5 5 0 00-10 0v2H5a1 1 0 00-1 1v9a2 2 0 002 2h12a2 2 0 002-2v-9a1 1 0 00-1-1h-2zM9 9V7a3 3 0 016 0v2" />
+              </svg>
+            </div>
+            <div className="stat-content">
+              <div className="stat-label">Pending Sellers</div>
+              <div className="stat-value">{stats.pendingSellers}</div>
+            </div>
+          </div>
+
+          <div className="stat-card stat-card-indigo">
+            <div className="stat-icon">
+              <svg className="stat-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="stat-content">
+              <div className="stat-label">Seller Rejections</div>
+              <div className="stat-value">{stats.totalSellerRejections}</div>
             </div>
           </div>
 
@@ -149,6 +178,12 @@ const AdminDashboard = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
               </svg>
               <span>Manage Users</span>
+            </a>
+            <a href="/admin/users?sellers=pending" className="quick-action-btn quick-action-alert">
+              <svg className="quick-action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 4h.01M5.64 19h12.72c1.54 0 2.502-1.667 1.732-2.5L13.732 5c-.77-.833-1.964-.833-2.732 0L3.908 16.5C3.138 17.333 4.1 19 5.64 19z" />
+              </svg>
+              <span>Review Sellers</span>
             </a>
             <a href="/admin/products" className="quick-action-btn quick-action-secondary">
               <svg className="quick-action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">

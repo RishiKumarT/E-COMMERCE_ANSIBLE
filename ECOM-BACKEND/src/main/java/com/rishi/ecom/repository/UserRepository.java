@@ -3,8 +3,10 @@ package com.rishi.ecom.repository;
 import com.rishi.ecom.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
+    List<User> findByRoleAndAccountStatus(User.Role role, User.AccountStatus accountStatus);
 }

@@ -67,6 +67,14 @@ const NavbarSeller = () => {
           <Link to="/seller/dashboard" className="navbar-link">Dashboard</Link>
           <Link to="/seller/products" className="navbar-link">My Products</Link>
           <Link to="/seller/product/add" className="navbar-link">Add Product</Link>
+          <Link to="/seller/onboarding" className="navbar-link">
+            {user?.accountStatus === 'APPROVED' ? 'Status' : 'Approval Status'}
+            {user?.accountStatus !== 'APPROVED' && (
+              <span className="ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-yellow-100 text-yellow-800">
+                {user?.accountStatus ?? 'PENDING'}
+              </span>
+            )}
+          </Link>
           <div className="navbar-dropdown">
             <button className="navbar-link">
               {user?.name}

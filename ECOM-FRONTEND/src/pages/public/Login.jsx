@@ -100,6 +100,14 @@ const Login = () => {
               onChange={handleChange}
             />
           </div>
+          <div className="text-right">
+            <a
+              href="/forgot-password"
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              Forgot password?
+            </a>
+          </div>
 
           {error && <ErrorMessage message={error} />}
           {success && <SuccessMessage message={success} />}
