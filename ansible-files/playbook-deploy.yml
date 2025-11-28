@@ -1,0 +1,109 @@
+---
+- name: Fullstack App Deployment on K3s (WSL)
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+
+  vars:
+    k8s_namespace: fullstack-app
+    k8s_manifest_path: "./k8/fullstack-deployment.yml"
+    frontend_nodeport: 30080
+    backend_nodeport: 30025
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+
+  tasks:
+    # -------------------------------------------------
+    # 🧠 Gather system facts
+    # -------------------------------------------------
+    - name: Gather system facts
+      ansible.builtin.setup:
+
+    # -------------------------------------------------
+    # ✅ Ensure K3s service is running
+    # -------------------------------------------------
+    - name: Ensure K3s service is running
+      ansible.builtin.service:
+        name: k3s
+        state: started
+        enabled: yes
+
+    # -------------------------------------------------
+    # 🚀 Apply Kubernetes manifests
+    # -------------------------------------------------
+    - name: Apply Kubernetes manifests
+      ansible.builtin.command:
+        cmd: kubectl apply -f {{ k8s_manifest_path }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+
+    # -------------------------------------------------
+    # ⏳ Wait for MySQL Pod to become ready
+    # -------------------------------------------------
+    - name: Wait for MySQL Pod
+      ansible.builtin.shell: >
+        echo "⏳ Waiting for MySQL pod to be ready..." &&
+        kubectl wait --for=condition=ready pod -l app=mysql -n {{ k8s_namespace }} --timeout=180s
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+      register: mysql_wait
+      retries: 5
+      delay: 15
+      until: mysql_wait.rc == 0
+
+    # -------------------------------------------------
+    # ⏸️ Delay to allow DB setup before backend starts
+    # -------------------------------------------------
+    - name: Pause before backend starts
+      ansible.builtin.pause:
+        seconds: 20
+
+    # -------------------------------------------------
+    # ⏳ Wait for backend pods
+    # -------------------------------------------------
+    - name: Wait for backend pods
+      ansible.builtin.shell: >
+        echo "⏳ Waiting for backend pods..." &&
+        kubectl wait --for=condition=ready pod -l app=backend -n {{ k8s_namespace }} --timeout=300s
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+      ignore_errors: true
+
+    # -------------------------------------------------
+    # ⏳ Wait for frontend pods
+    # -------------------------------------------------
+    - name: Wait for frontend pods
+      ansible.builtin.shell: >
+        echo "⏳ Waiting for frontend pods..." &&
+        kubectl wait --for=condition=ready pod -l app=frontend -n {{ k8s_namespace }} --timeout=180s
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+
+    # -------------------------------------------------
+    # 🔁 Background port-forwarding
+    # -------------------------------------------------
+    - name: 🔁 Forward backend NodePort {{ backend_nodeport }} -> 2000 (background)
+      ansible.builtin.shell: >
+        nohup kubectl port-forward svc/backend-service {{ backend_nodeport }}:2000
+        -n {{ k8s_namespace }} >/tmp/backend-forward.log 2>&1 &
+      args:
+        executable: /bin/bash
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+
+    - name: 🔁 Forward frontend NodePort {{ frontend_nodeport }} -> 80 (background)
+      ansible.builtin.shell: >
+        nohup kubectl port-forward svc/frontend-service {{ frontend_nodeport }}:80
+        -n {{ k8s_namespace }} >/tmp/frontend-forward.log 2>&1 &
+      args:
+        executable: /bin/bash
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+
+    # -------------------------------------------------
+    # 🌐 Show access URLs
+    # -------------------------------------------------
+    - name: Show accessible URLs
+      ansible.builtin.debug:
+        msg:
+          - "✅ Frontend available at: http://localhost:{{ frontend_nodeport }}"
+          - "✅ Backend available at:  http://localhost:{{ backend_nodeport }}"
